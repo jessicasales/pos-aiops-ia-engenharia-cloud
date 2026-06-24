@@ -1,21 +1,19 @@
-# Exercício 1 — Troubleshooting
-# Pegue um log, stack trace ou mensagem de erro real que você encontrou nas últimas semanas e peça ajuda à IA para entender e corrigir.
-# 
-# Exemplos de ponto de partida:
-# 
-# Um pod em CrashLoopBackOff no Kubernetes
-# Um deploy que falhou em staging
-# Um erro de permissão em um pipeline CI/CD
-# Um timeout de conexão em um serviço
+> Exercício 1 — Troubleshooting
+> Pegue um log, stack trace ou mensagem de erro real que você encontrou nas últimas semanas e peça ajuda à IA para entender e corrigir.
+>Exemplos de ponto de partida:
+> - Um pod em CrashLoopBackOff no Kubernetes
+> - Um deploy que falhou em staging
+> - Um erro de permissão em um pipeline CI/CD
+> - Um timeout de conexão em um serviço
 
 ---
 
-# Experimento [NN] — [título curto]
+# Experimento [01] — [Troubleshooting - Travamento de container]
 
-**Data:** 2026-05-18
-**Ferramenta usada:** [Gemini]
-**Modelo:** [Flash 3.5]
-**Categoria:** [Troubleshooting]
+- **Data:** 2026-05-18
+- **Ferramenta usada:** [Gemini]
+- **Modelo:** [Flash 3.5]
+- **Categoria:** [Troubleshooting]
 
 ## Contexto
 
@@ -25,6 +23,7 @@ Estava com um problema de travamento de um container rodando MySQL durante uma t
 
 Analise os logs do container mysql. Na hora que está fazendo o backup dp banco por algum motivo ele trava. Na hora que loguei na máquina que o container está e peguei o log ainda no travamento, estava:
 
+```text
 root@prod-portaldpmg-230-16-83:/home/jessica.sales# docker logs wp_dpmg_db_prod -f
 2025-09-09 10:38:12-03:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 9.2.0-1.el9 started.
 2025-09-09 10:38:12-03:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
@@ -130,11 +129,14 @@ ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the ma
 2026-05-18T11:22:09.927785Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
 2026-05-18T11:22:09.933987Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
 2026-05-18T11:22:09.977328Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
-2026-05-18T11:22:09.977674Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '9.2.0'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+2026-05-18T11:22:09.977674Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '9.2.0'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL 
+```
+
 
 Analise esses logs do syslog da máquina também pouco antes de acontecer travamento:
 Esse log é do syslog:
 
+```text
 May 18 08:16:34 prod-portaldpmg-230-16-83 kernel: [22089172.480397] [UFW BLOCK] IN=ens192 OUT= MAC=01:00:5e:00:00:01:55:55:55:55:55:55:08:00 SRC=0.0.0.0 DST=224.0.0.1 LEN=36 TOS=0x00 PREC=0xE0 TTL=1 ID=0 PROTO=2
 May 18 08:17:01 prod-portaldpmg-230-16-83 CRON[852637]: (root) CMD (   cd / && run-parts --report /etc/cron.hourly)
 May 18 08:18:39 prod-portaldpmg-230-16-83 kernel: [22089297.483160] [UFW BLOCK] IN=ens192 OUT= MAC=01:00:5e:00:00:01:55:55:55:55:55:55:08:00 SRC=0.0.0.0 DST=224.0.0.1 LEN=36 TOS=0x00 PREC=0xC0 TTL=1 ID=0 PROTO=2
@@ -211,6 +213,7 @@ May 18 08:22:09 prod-portaldpmg-230-16-83 wp_dpmg_db_prod[94323]: 2026-05-18T11:
 May 18 08:22:09 prod-portaldpmg-230-16-83 wp_dpmg_db_prod[94323]: 2026-05-18T11:22:09.933987Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
 May 18 08:22:09 prod-portaldpmg-230-16-83 wp_dpmg_db_prod[94323]: 2026-05-18T11:22:09.977328Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
 May 18 08:22:09 prod-portaldpmg-230-16-83 wp_dpmg_db_prod[94323]: 2026-05-18T11:22:09.977674Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '9.2.0'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+```
 
 ## Resposta da IA
 
