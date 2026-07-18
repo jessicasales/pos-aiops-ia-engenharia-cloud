@@ -1,0 +1,62 @@
+# ---- Stage 1: Build ----
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+# Instala dependências de build necessárias para psycopg2-binary e afins
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia apenas o requirements primeiro para aproveitar cache de layers
+COPY requirements.txt .
+
+# Instala as dependências em um diretório isolado para copiar depois
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ---- Stage 2: Runtime ----
+FROM python:3.12-slim AS runtime
+
+# Metadados da imagem
+LABEL maintainer="devops@lift.com" \
+      description="Imagem da API Lift (Python/Flask)"
+
+# Cria usuário não-root para rodar a aplicação
+RUN groupadd -r lift && useradd -r -g lift -d /app -s /sbin/nologin lift
+
+# Instala apenas dependências de runtime (libpq necessária para psycopg2)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copia os pacotes Python instalados no stage de build
+COPY --from=builder /root/.local /home/lift/.local
+
+# Copia o código da aplicação
+COPY app.py .
+COPY lib/ ./lib/
+
+# Garante que os binários instalados via --user sejam encontrados no PATH
+ENV PATH=/home/lift/.local/bin:$PATH \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Ajusta permissões para o usuário não-root
+RUN chown -R lift:lift /app /home/lift/.local
+
+USER lift
+
+EXPOSE 8080
+
+# Variáveis obrigatórias em runtime (sem valores default por segurança)
+ENV DATABASE_URL="" \
+    API_KEY=""
+
+# Healthcheck básico (ajuste o endpoint conforme sua API)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "app:app"]
