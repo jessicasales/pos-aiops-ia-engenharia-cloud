@@ -1,0 +1,228 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chronos-api
+  namespace: production
+  labels:
+    app: chronos-api
+    version: v1
+    component: api
+  annotations:
+    description: "Chronos API - Serviço crítico de gestão de timestamps"
+    maintained-by: "platform-team"
+spec:
+  # Alta Disponibilidade: mínimo 3 réplicas para redundância
+  replicas: 3
+  
+  # Estratégia de atualização progressiva
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  
+  selector:
+    matchLabels:
+      app: chronos-api
+  
+  template:
+    metadata:
+      labels:
+        app: chronos-api
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    
+    spec:
+      # ServiceAccount com permissões mínimas
+      serviceAccountName: chronos-api
+      
+      # Segurança a nível de pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      
+      # Tolerância a falhas de nó
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - chronos-api
+            topologyKey: kubernetes.io/hostname
+      
+      # Terminator graciosa
+      terminationGracePeriodSeconds: 30
+      
+      containers:
+      - name: api
+        # Imagem versionada (NUNCA usar :latest em produção)
+        image: chronos-api:v1.2.3
+        imagePullPolicy: IfNotPresent
+        
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        
+        # Variáveis de ambiente seguindo boas práticas
+        env:
+        # Configurações simples
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: PORT
+          value: "8080"
+        
+        # Referência a Secrets (NÃO hardcoded)
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chronos-api-secrets
+              key: db-password
+        
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: chronos-api-secrets
+              key: jwt-secret
+        
+        # Dados sensíveis adicionais
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: chronos-api-secrets
+              key: api-key
+        
+        # Referência a ConfigMap para configurações não-sensíveis
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: chronos-api-config
+              key: database-url
+        
+        - name: REDIS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: chronos-api-config
+              key: redis-enabled
+        
+        # Resource requests e limits (ESSENCIAL para scheduling e QoS)
+        resources:
+          requests:
+            cpu: 250m           # Mínimo garantido
+            memory: 256Mi       # Mínimo garantido
+          limits:
+            cpu: 1000m          # Máximo permitido
+            memory: 512Mi       # Máximo permitido
+        
+        # Liveness Probe: detecta containers "mortos" e reinicia
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30      # Aguarda container inicializar
+          periodSeconds: 10            # Verifica a cada 10s
+          timeoutSeconds: 5            # Timeout de 5s
+          failureThreshold: 3          # Reinicia após 3 falhas
+          successThreshold: 1
+        
+        # Readiness Probe: detecta quando container está pronto para tráfego
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10      # Verificação mais rápida
+          periodSeconds: 5             # Verificação frequente
+          timeoutSeconds: 3
+          failureThreshold: 2          # Remove do load balancer após 2 falhas
+          successThreshold: 1
+        
+        # Security Context a nível de container
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        
+        # Volumes montados como read-only quando possível
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /app/cache
+      
+      # Volumes temporários
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: cache
+        emptyDir:
+          sizeLimit: 500Mi
+
+---
+# PodDisruptionBudget: garante mínimo de pods disponíveis durante disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: chronos-api-pdb
+  namespace: production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: chronos-api
+
+---
+# ServiceAccount com permissões mínimas
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chronos-api
+  namespace: production
+  labels:
+    app: chronos-api
+
+---
+# Service para exposição interna
+apiVersion: v1
+kind: Service
+metadata:
+  name: chronos-api
+  namespace: production
+  labels:
+    app: chronos-api
+  annotations:
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app: chronos-api
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: metrics
+    protocol: TCP
+  sessionAffinity: None

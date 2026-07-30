@@ -1,0 +1,290 @@
+# RECURSOS AVANÇADOS - Opcional para Production Grade
+
+---
+# Horizontal Pod Autoscaler - Auto-scaling baseado em métricas
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chronos-api-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chronos-api
+  minReplicas: 3        # Mínimo (alta disponibilidade)
+  maxReplicas: 10       # Máximo (controle de custo)
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70        # Scale up em 70% CPU
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80        # Scale up em 80% memória
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Aguarda 5min antes de scale down
+      policies:
+      - type: Percent
+        value: 50                      # Scale down 50% de cada vez
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0    # Scale up imediato
+      policies:
+      - type: Percent
+        value: 100                     # Dobra a cada scale up
+        periodSeconds: 60
+
+---
+# Network Policy - Isolamento de rede
+# Requisitos: CNI que suporte network policies (Calico, Weave, etc)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: chronos-api-ingress
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: chronos-api
+  policyTypes:
+  - Ingress
+  ingress:
+  # Traffic do Ingress Controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          name: istio-system
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Traffic de pods no mesmo namespace (ex: microserviços)
+  - from:
+    - podSelector:
+        matchLabels:
+          namespace: production
+    ports:
+    - protocol: TCP
+      port: 8080
+
+---
+# Network Policy - Egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: chronos-api-egress
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: chronos-api
+  policyTypes:
+  - Egress
+  egress:
+  # DNS (53/UDP)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: UDP
+      port: 53
+  # PostgreSQL (5432)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Redis (6379)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # HTTPS externa (443)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# Role - Permissões mínimas (RBAC)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chronos-api-role
+  namespace: production
+rules:
+# Ler ConfigMaps (aplicação pode precisar recarregar config dinamicamente)
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+# Acessar secrets (via mounted volumes, melhor que programaticamente)
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+  resourceNames: ["chronos-api-secrets"]
+
+---
+# RoleBinding - Bind da role ao service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chronos-api-rolebinding
+  namespace: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: chronos-api-role
+subjects:
+- kind: ServiceAccount
+  name: chronos-api
+  namespace: production
+
+---
+# Ingress - Expor serviço externamente com TLS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chronos-api-ingress
+  namespace: production
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/auth-type: "basic"  # Opcional
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.chronos.example.com
+    secretName: chronos-api-tls
+  rules:
+  - host: api.chronos.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: chronos-api
+            port:
+              name: http
+
+---
+# ResourceQuota - Limites de namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: production-quota
+  namespace: production
+spec:
+  hard:
+    requests.cpu: "50"           # Total de CPU requests
+    requests.memory: "100Gi"     # Total de memória requests
+    limits.cpu: "100"            # Total de CPU limits
+    limits.memory: "200Gi"       # Total de memória limits
+    pods: "100"                  # Número de pods
+    services: "20"               # Número de services
+
+---
+# NetworkPolicy - Pod-to-Pod: Qualquer pod pode falar com qualquer outro
+# (Customize conforme suas necessidades)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: production
+spec:
+  podSelector: {}  # Aplica a todos os pods
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}  # De qualquer pod no namespace
+
+---
+# PodMonitor - Para Prometheus Operator
+# Requer: prometheus-operator instalado no cluster
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: chronos-api-monitor
+  namespace: production
+  labels:
+    app: chronos-api
+spec:
+  selector:
+    matchLabels:
+      app: chronos-api
+  podMetricsEndpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+
+---
+# PrometheusRule - Alertas
+# Requer: prometheus-operator instalado no cluster
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: chronos-api-alerts
+  namespace: production
+spec:
+  groups:
+  - name: chronos-api
+    interval: 30s
+    rules:
+    # Alerta: Deployment em estado crítico
+    - alert: ChronosAPIDeploymentDown
+      expr: kube_deployment_status_replicas_available{deployment="chronos-api"} < 2
+      for: 5m
+      annotations:
+        summary: "Chronos API: Menos de 2 replicas disponíveis"
+        description: "{{ $value }} replicas disponíveis"
+    
+    # Alerta: Taxa alta de erros
+    - alert: ChronosAPIHighErrorRate
+      expr: |
+        (sum(rate(http_requests_total{job="chronos-api",status=~"5.."}[5m])) /
+         sum(rate(http_requests_total{job="chronos-api"}[5m]))) > 0.05
+      for: 5m
+      annotations:
+        summary: "Chronos API: Taxa de erro acima de 5%"
+    
+    # Alerta: Latência alta
+    - alert: ChronosAPIHighLatency
+      expr: |
+        histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="chronos-api"}[5m])) by (le)) > 1
+      for: 5m
+      annotations:
+        summary: "Chronos API: P95 latency acima de 1s"
+
+---
+# Memcached para request coalescing (aumenta performance)
+# Opcional: para aplicações que fazem cache de requests
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chronos-api-nginx-cache
+  namespace: production
+data:
+  nginx.conf: |
+    # Configuração de cache (para ingress-nginx)
+    map $request_method $skip_cache {
+      default 1;
+      GET 0;
+      HEAD 0;
+    }
