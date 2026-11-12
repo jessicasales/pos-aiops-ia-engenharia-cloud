@@ -114,10 +114,6 @@ Reforço de um princípio recorrente no curso: o resultado gerado pela IA (seja 
 <img width="1256" height="691" alt="{24197F94-3297-4E61-9C72-06AF1EC37406}" src="https://github.com/user-attachments/assets/d0949e6e-8acf-492d-8dc3-1e54cc4aece2" />
 <img width="1198" height="702" alt="{097582FF-2CA8-4636-94FE-F32FBB6E8F50}" src="https://github.com/user-attachments/assets/4204c6c0-103a-4f83-8d73-b9d090c9976c" />
 
-
-<img width="1307" height="753" alt="{FA5CDB22-A1F5-4BEA-9D5B-24368216D4D1}" src="https://github.com/user-attachments/assets/f576588f-9d3e-4682-9f6b-e5eaf388e5df" />
-
-
 ## Comandos e configurações
 
 ```text
