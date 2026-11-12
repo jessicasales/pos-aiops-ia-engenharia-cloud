@@ -15,6 +15,7 @@
 Aula de abertura do capítulo "Sub Agentes", definindo o conceito central que vai guiar todo o capítulo: um sub-agente não deve ser visto como "mais um agente", mas como uma **fronteira de execução** — um isolamento com uma janela de contexto própria, onde só duas coisas atravessam a fronteira: o **briefing da tarefa** (na ida) e o **resultado** (na volta). O instrutor usa um exemplo de investigação de incidente em Kubernetes + Prometheus para demonstrar os ganhos (economia de contexto, especialização, controle de permissões, paralelismo) e os custos (o sub-agente não conhece a sessão principal, o briefing precisa ser completo, e você não controla o que ele decide incluir ou deixar de fora no resultado).
 
 ## Conceitos principais
+<img width="622" height="348" alt="image" src="https://github.com/user-attachments/assets/3bf0896a-51b0-496f-9f22-37514188111b" />
 
 ### Definição
 
