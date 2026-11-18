@@ -10,6 +10,20 @@
 | **Data** | 29/10/2026 22:45 |
 | **Tags** | aiops, agentes-autonomos, langchain, langgraph, deepagents, triagem-de-alertas |
 
+## Slides da aula
+
+| Slide | Momento | Título |
+|---|---|---|
+| ![Da assistência à autonomia](images/slide-01-0000-da-assistencia-a-autonomia.png) | 0:00 | Da assistência à autonomia |
+| ![Anatomia do trabalho assistido](images/slide-02-0029-anatomia-trabalho-assistido.png) | 0:29 | Anatomia do trabalho assistido |
+| ![Triagem autônoma de um alerta crítico](images/slide-03-0158-triagem-autonoma-alerta-critico.png) | 1:58 | Triagem autônoma de um alerta crítico |
+| ![Do sinal à hipótese de causa raiz](images/slide-04-0258-do-sinal-a-hipotese-causa-raiz.png) | 2:58 | Do sinal à hipótese de causa raiz |
+| ![Um ecossistema, uma escolha didática](images/slide-05-0357-ecossistema-escolha-didatica.png) | 3:57 | Um ecossistema, uma escolha didática |
+| ![Autonomia é uma progressão](images/slide-06-0457-autonomia-e-progressao.png) | 4:57 | Autonomia é uma progressão — não um salto |
+| ![Roadmap do módulo](images/slide-07-0556-roadmap-do-modulo.png) | 5:56 | Roadmap do módulo — as peças se encaixam |
+
+> Esta aula não tem "Código da Aula" / material complementar (é introdução conceitual).
+
 ## Resumo da aula
 
 Abertura do módulo "Construção de Agentes e Fundamentos de AIOps". Até aqui, o curso trabalhou com agentes de forma **assistida** — usando ferramentas prontas (Claude Code, Codex) onde o humano monta o harness (skills, rules, MCP) e acompanha/verifica cada execução. Este módulo muda radicalmente de abordagem: os agentes serão **construídos do zero**, sem nenhuma ferramenta de codificação assistida, usando frameworks de desenvolvimento de agentes — para operar de forma **autônoma**, tomando decisões a partir de eventos/gatilhos, com intervenção humana mínima.
