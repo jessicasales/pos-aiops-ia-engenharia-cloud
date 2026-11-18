@@ -5,7 +5,7 @@ Anotações do capítulo "Automação e Agentes de IA" do módulo **Construção
 | # | Aula | Duração | Tema |
 |---|---|---|---|
 | 01 | [Introdução](01-introducao/01-introducao.md) | 06:32 | Abertura do módulo: agentes autônomos com LangChain/LangGraph/DeepAgents |
-| 02 | [Ambiente primeiros passos](02-ambiente-primeiros-passos.md) | 32:12 | Setup LangChain, `init_chat_model`, `invoke` vs. `stream` |
+| 02 | [Ambiente primeiros passos](02-ambiente-primeiros-passos/02-ambiente-primeiros-passos.md) | 32:12 | Setup LangChain, `init_chat_model`, `invoke` vs. `stream` ([código da aula](02-ambiente-primeiros-passos/codigo-aula.md)) |
 | 03 | [Chaining](03-chaining.md) | 24:02 | Workflow sequencial com prompt chaining (LCEL) |
 | 04 | [Outputs e Contratos](04-outputs-e-contratos.md) | 34:09 | Contratos Pydantic na entrada/saída, `with_structured_output`, FastAPI |
 | 05 | [Routing](05-routing.md) | 35:12 | `RunnableBranch` — desvio condicional entre modelos/prompts especializados |

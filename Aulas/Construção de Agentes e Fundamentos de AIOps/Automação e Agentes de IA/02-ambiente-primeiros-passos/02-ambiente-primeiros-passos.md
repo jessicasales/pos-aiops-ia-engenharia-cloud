@@ -10,6 +10,21 @@
 | **Data** | 29/10/2026 23:00 |
 | **Tags** | langchain, uv, init_chat_model, system-message, human-message, invoke, stream, usage_metadata |
 
+## Slides e telas da aula
+
+| Tela | Momento | Conteúdo |
+|---|---|---|
+| ![LangChain homepage](images/tela-01-0055-langchain-homepage.png) | 0:55 | Abertura em langchain.com |
+| ![LangChain Docs — Build overview](images/tela-02-0504-langchain-docs-build-overview.png) | 5:04 | Documentação — visão geral do stack (LangChain/LangGraph/Deep Agents) |
+| ![Documentação do uv](images/tela-03-0808-uv-docs.png) | 8:08 | Documentação do `uv` (gerenciador de pacotes Python) |
+| ![VS Code — SYSTEM_PROMPT e init_chat_model](images/tela-04-1301-vscode-system-prompt.png) | 13:01 | `app.py` — carregamento do `.env`, `SYSTEM_PROMPT`, `init_chat_model` |
+| ![VS Code — responder_streaming](images/tela-05-1846-vscode-responder-streaming.png) | 18:46 | `app.py` — função `responder_streaming` com `model.stream` |
+| ![VS Code — model.invoke](images/tela-06-2248-vscode-model-invoke.png) | 22:48 | `app.py` — função `responder` com `model.invoke`, explorer do projeto |
+| ![Terminal — explicação sobre AIOps](images/tela-07-2741-terminal-aiops-explicacao.png) | 27:41 | Saída no terminal: resposta do modelo explicando AIOps + `usage_metadata` |
+| ![VS Code — pergunta sobre IAOps](images/tela-08-3055-vscode-pergunta-iaops.png) | 30:55 | `app.py` — variável `pergunta = "O que é IAOps?"` |
+
+Código oficial da aula (Material Complementar da plataforma): [`codigo-aula.md`](codigo-aula.md).
+
 ## Resumo da aula
 
 Primeira aula prática do módulo. Define os requisitos de ambiente (Python 3.12, gerenciador de pacotes `uv`, contas de API em provedores de IA) e explica por que usar o **LangChain** em vez do SDK direto de cada provedor (evita lock-in/acoplamento). Demonstra a estrutura mínima de um projeto LangChain conectando a um LLM (Google Gemini, via AI Studio) com `init_chat_model`, e a diferença prática entre as duas formas de obter resposta: `invoke` (resposta completa de uma vez) e `stream` (resposta token a token, progressiva).
