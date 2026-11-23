@@ -24,7 +24,26 @@ Evento disparado no Claude Code sempre que o usuário envia um prompt — **ante
 
 Prompt enviado contendo uma connection string PostgreSQL fictícia (para migração a um RDS) e pedindo um diff de configuração, sem hook nenhum registrado: o agente processa normalmente, recebendo e usando a informação sensível — reforçando que, sem controle, nada impede o envio acidental de credenciais/segredos no prompt.
 
+```text
+Estamos migrando o banco PostgreSQL do encontros-tech, que hoje roda dentro do cluster, para um RDS.
+
+A nova connection string é:
+
+postgresql://app_runtime:fixture-only@encontros-tech-demo.cluster-example.us-east-1.rds.amazonaws.com:5432/encontros_tech
+
+Sem alterar arquivos, consulte a estrutura atual do projeto e apresente o diff que seria necessário para:
+
+- atualizar a configuração consumida pela aplicação;
+- preservar DATABASE_URL como contrato;
+- remover o PostgreSQL executado dentro do cluster;
+- manter a connection string em um Secret;
+- validar a conectividade e o endpoint /ready;
+- definir uma estratégia de rollback.
+```
+
 ### O handler — `.claude/hooks/block-connection-strings.py`
+
+Criar pasta .claude/hooks e inserir script.
 
 Script Python que:
 1. Lê o payload JSON do evento via `stdin`.
