@@ -21,6 +21,7 @@ Este é o arquivo `cerebro.yaml`, versionado no repositório de infra, que defin
 > Não é configuração de aplicação de negócio nem de banco relacional: são os **ajustes do próprio Elasticsearch**.
 
 # cerebro.yaml — configuração do cluster Elasticsearch (repositório de infra)
+```yaml
 cerebro:
   shards: 12
   replicas_per_shard: 1
@@ -37,7 +38,7 @@ cerebro:
 ### Artefato 2 — Métricas das Últimas Duas Horas
 
 Saíram do dashboard do Sentinel (o produto de observabilidade da própria Aegis). Cada linha é um ponto de 30 em 30 minutos:
-
+```bash
 timestamp              search_p99_ms   indexed_docs_per_s   heap_used_pct   cache_hit_pct
 2026-05-13 08:00 UTC   850             4200                 61              74
 2026-05-13 08:30 UTC   1100            4100                 68              71
@@ -56,7 +57,7 @@ timestamp              search_p99_ms   indexed_docs_per_s   heap_used_pct   cach
 ### Artefato 3 — Logs do Nó do Cerebro
 
 Um trecho dos logs coletado com `kubectl logs` no pod, cobrindo a janela do problema (~08h às ~10h, as mesmas 2h das métricas). É o log nativo do Elasticsearch (horário em UTC):
-
+```bash
 [2026-05-13T08:02:11,540][INFO ][o.e.t.LoggingTaskListener              ][cerebro-node-3] reindex task [88123] (scheduled 02:00) progress, created [3.8M]/[10M] docs (38%)
 [2026-05-13T08:14:33,019][WARN ][o.e.m.j.JvmGcMonitorService            ][cerebro-node-3] [gc][young] duration [620ms], collections [1] in [10s], heap [4.9gb]->[3.1gb]/[8gb]
 [2026-05-13T08:41:07,222][INFO ][o.e.i.IndexingMemoryController         ][cerebro-node-3] now throttling indexing for shard [logs-2026.05][7]: segment writing can't keep up
